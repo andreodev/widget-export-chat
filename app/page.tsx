@@ -123,6 +123,8 @@ export default function ExportarPage() {
         loading={loading}
         pdfBlob={pdfBlob}
         nomeArquivo={nomeArquivo}
+        allchat={allChats}
+        setAllChats={null}
       />
     </motion.div>
   );

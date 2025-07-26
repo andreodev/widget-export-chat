@@ -9,6 +9,8 @@ interface ExportSectionProps {
   loading: boolean;
   pdfBlob: Blob | null;
   nomeArquivo: string;
+  allchat: boolean
+  setAllChats: null
 }
 
 export function ExportSection({
@@ -16,11 +18,14 @@ export function ExportSection({
   loading,
   pdfBlob,
   nomeArquivo,
+  allchat,
+  setAllChats
 }: ExportSectionProps) {
   return (
     <div className="space-y-4">
       <ExportButton onClick={onExport} disabled={loading} />
-      <ExportAllCheckbox  /> {/*future feature*/}
+      <ExportAllCheckbox  setAllChats={setAllChats} allChats={allchat}/> 
+      {/*future feature*/}
       {loading && <LoadingOverlay />}
       {pdfBlob && (
         <DownloadPdfButton pdfBlob={pdfBlob} nomeArquivo={nomeArquivo} />

@@ -1,103 +1,129 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect, useRef } from "react";
+import { useFetchText } from "./hooks/useFetch";
+import WlExtensionLoader from "@/components/WlExtensionLoader";
+import { motion } from "framer-motion";
+import type { PayloadDTO } from "@/types/payloadDTO";
+import { Header } from "@/components/Header";
+import { ExportSection } from "@/components/ExportSection";
+import { useCurrentAttendance } from "./hooks/useSyncFromWindow";
+import { base64ToBlob } from "@/util/base64ToBlob";
+
+export default function ExportarPage() {
+  const [allChats] = useState(false);
+  const [currentAttendance, setCurrentAttendance] = useCurrentAttendance();
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [nomeArquivo, setNomeArquivo] = useState("exportacao.pdf");
+  const [loading, setLoading] = useState(false);
+  const { fetchData } = useFetchText();
+  const previousAttendanceIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const prevId = previousAttendanceIdRef.current;
+    const currentId = currentAttendance?.atendimentoId || null;
+
+    if (prevId !== currentId) {
+      setPdfBlob(null);
+      setNomeArquivo("exportacao.pdf");
+      setLoading(false);
+    }
+
+    previousAttendanceIdRef.current = currentId;
+  }, [currentAttendance]);
+
+  const exportar = async () => {
+    if (!currentAttendance) {
+      window.WlExtension?.alert?.({
+        message: "Abra um atendimento para exportar.",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setLoading(true);
+    const isExportAll = allChats === true;
+
+    if (isExportAll && !currentAttendance.contato?.id) {
+      window.WlExtension?.alert?.({
+        message:
+          "Não foi possível identificar o contato para exportar todos os atendimentos.",
+        variant: "warning",
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const payload: PayloadDTO = {
+        atendimentoId: currentAttendance.atendimentoId,
+        canalId: currentAttendance.canalId,
+        sistemaId: currentAttendance.sistemaId,
+        contatoId: currentAttendance.contato?.id || null,
+        allchats: allChats,
+      };
+
+      const text = await fetchData(payload);
+      const data = text ? JSON.parse(text) : {};
+
+      let base64pdf: string | null = null;
+
+      if (Array.isArray(data) && data[0]?.response?.body?.base64) {
+        base64pdf = data[0].response.body.base64;
+        setNomeArquivo(data[0].response.body.nomeArquivo || "exportacao.pdf");
+      } else if (Array.isArray(data) && data[0]?.data) {
+        base64pdf = data[0].data;
+        setNomeArquivo(data[0].nomeArquivo || "exportacao.pdf");
+      } else if (data?.pdfBase64) {
+        base64pdf = data.pdfBase64;
+        setNomeArquivo(data.nomeArquivo || "exportacao.pdf");
+      } else if (data?.base64) {
+        base64pdf = data.base64;
+        setNomeArquivo(data.nomeArquivo || "exportacao.pdf");
+      }
+
+      if (base64pdf) {
+        const blob = base64ToBlob(base64pdf);
+        setPdfBlob(blob);
+
+        window.WlExtension?.alert?.({
+          message: "Exportação realizada",
+          variant: "success",
+        });
+      }
+    } catch (err) {
+      console.error("Erro na exportação:", err);
+      window.WlExtension?.alert?.({
+        message: "Erro na exportação",
+        variant: "error",
+      });
+    }
+
+    setLoading(false);
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="w-full max-w-xl mx-auto p-6 font-sans space-y-6"
+    >
+      <WlExtensionLoader
+        onOpenAttendance={(attendance) => {
+          window.currentAttendance = attendance;
+          setCurrentAttendance(attendance);
+        }}
+      />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      <Header />
+
+      <ExportSection
+        onExport={exportar}
+        loading={loading}
+        pdfBlob={pdfBlob}
+        nomeArquivo={nomeArquivo}
+      />
+    </motion.div>
   );
 }

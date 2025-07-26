@@ -3,12 +3,6 @@
 Widget React desenvolvido para exportar conversas de chat com suporte a PDF, agrupamento por data e filtragem por contato.  
 Projeto realizado como **freelancer para a Inov Start**.
 
-
-## 🚀 Demonstração
-
-> Interface de exportação integrada ao sistema de atendimentos:
-
-
 ## ✨ Funcionalidades
 
 - 🔍 Busca de chats por contato

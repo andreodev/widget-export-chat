@@ -4,4 +4,5 @@ export type PayloadDTO =  {
     sistemaId: string;
     contatoId: string | null;
     allchats: boolean;
+    protocolo?: string
 }

@@ -17,7 +17,7 @@ export function ExportButton({
       onClick={onClick}
       disabled={disabled}
       whileTap={{ scale: 0.97 }}
-      className="w-full bg-[#192D3E] cursor-pointer text-white py-2 px-4 rounded-sm text-base font-medium flex items-center justify-center gap-2 hover:bg-[#192d3e94] transition disabled:opacity-50"
+      className="w-full bg-white cursor-pointer text-[#192D3E] border-[#192D3E] border py-2 px-4 rounded-sm text-base font-medium flex items-center justify-center gap-2 hover:bg-[#192d3e94] transition disabled:opacity-50"
     >
       <FaFilePdf />
       {loading ? "Exportando..." : "Exportar PDF"}

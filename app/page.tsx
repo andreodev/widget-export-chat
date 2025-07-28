@@ -1,23 +1,32 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useFetchText } from "./hooks/useFetch";
+import { useExportAll, useExportProtocol } from "../hooks/useExport";
 import WlExtensionLoader from "@/components/WlExtensionLoader";
 import { motion } from "framer-motion";
 import type { PayloadDTO } from "@/types/payloadDTO";
-import { Header } from "@/components/Header";
 import { ExportSection } from "@/components/ExportSection";
 import { useCurrentAttendance } from "./hooks/useSyncFromWindow";
 import { base64ToBlob } from "@/util/base64ToBlob";
+import Protocols from "@/components/Status";
+import { UseFetchStatus } from "@/components/Status/hooks/useStatus";
+import type { Protocol } from "@/types/ProtocolDTO";
+
 
 export default function ExportarPage() {
-  const [allChats] = useState(false);
+  const [allChats, setAllChats] = useState(false);
   const [currentAttendance, setCurrentAttendance] = useCurrentAttendance();
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [nomeArquivo, setNomeArquivo] = useState("exportacao.pdf");
   const [loading, setLoading] = useState(false);
-  const { fetchData } = useFetchText();
   const previousAttendanceIdRef = useRef<string | null>(null);
+  const [status, setStatus] = useState<Protocol[]>([]);
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
+
+  //custom hooks
+  const { fetchData } = useExportAll();
+  const { fetchDataStatus } = UseFetchStatus();
+  const { exportProtocol } = useExportProtocol();
 
   useEffect(() => {
     const prevId = previousAttendanceIdRef.current;
@@ -32,6 +41,38 @@ export default function ExportarPage() {
     previousAttendanceIdRef.current = currentId;
   }, [currentAttendance]);
 
+  useEffect(() => {
+    const getStatus = async () => {
+      if (!currentAttendance) return;
+
+      const payload: PayloadDTO = {
+        atendimentoId: currentAttendance.atendimentoId,
+        canalId: currentAttendance.canalId,
+        sistemaId: currentAttendance.sistemaId,
+        contatoId: currentAttendance.contato?.id || null,
+        allchats: allChats,
+      };
+
+      try {
+        const result = await fetchDataStatus(payload);
+        const mappedProtocols = Array.isArray(result)
+          ? result.map((item) => ({
+              id: item.protocol || item.id,
+              startDate: item.startDate || new Date().toISOString(),
+              endDate: item.endDate || null,
+              status: item.status || "desconhecido",
+            }))
+          : [];
+        setStatus(mappedProtocols);
+      } catch (error) {
+        console.error("Erro ao buscar status:", error);
+      }
+    };
+
+    getStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAttendance, allChats]);
+
   const exportar = async () => {
     if (!currentAttendance) {
       window.WlExtension?.alert?.({
@@ -42,7 +83,9 @@ export default function ExportarPage() {
     }
 
     setLoading(true);
-    const isExportAll = allChats === true;
+    setPdfDownloaded(false);
+
+    const isExportAll = allChats;
 
     if (isExportAll && !currentAttendance.contato?.id) {
       window.WlExtension?.alert?.({
@@ -65,7 +108,6 @@ export default function ExportarPage() {
 
       const text = await fetchData(payload);
       const data = text ? JSON.parse(text) : {};
-
       let base64pdf: string | null = null;
 
       if (Array.isArray(data) && data[0]?.response?.body?.base64) {
@@ -102,30 +144,101 @@ export default function ExportarPage() {
     setLoading(false);
   };
 
+  const exportarProtocolo = async (protocolId: string) => {
+    if (!currentAttendance) {
+      window.WlExtension?.alert?.({
+        message: "Abra um atendimento para exportar.",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const payload: PayloadDTO = {
+        atendimentoId: currentAttendance.atendimentoId,
+        canalId: currentAttendance.canalId,
+        sistemaId: currentAttendance.sistemaId,
+        contatoId: currentAttendance.contato?.id || null,
+        protocolo: protocolId,
+        allchats: false,
+      };
+
+      const text = await exportProtocol(payload);
+      const data = text ? JSON.parse(text) : {};
+      let base64pdf: string | null = null;
+
+      if (data?.base64) {
+        base64pdf = data.base64;
+        setNomeArquivo(data.nomeArquivo || `protocolo-${protocolId}.pdf`);
+      }
+
+      if (base64pdf) {
+        const blob = base64ToBlob(base64pdf);
+        setPdfBlob(blob);
+
+        // Função para download automático
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = data.nomeArquivo || `protocolo-${protocolId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        window.WlExtension?.alert?.({
+          message: "Protocolo exportado com sucesso",
+          variant: "success",
+        });
+      } else {
+        window.WlExtension?.alert?.({
+          message: "PDF não disponível para este protocolo",
+          variant: "warning",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao exportar protocolo:", error);
+      window.WlExtension?.alert?.({
+        message: "Erro ao exportar protocolo",
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="w-full max-w-xl mx-auto p-6 font-sans space-y-6"
+      className="min-h-screen bg-gray-50 p-4"
     >
-      <WlExtensionLoader
-        onOpenAttendance={(attendance) => {
-          window.currentAttendance = attendance;
-          setCurrentAttendance(attendance);
-        }}
-      />
+      <div className="max-w-md mx-auto space-y-4">
+        <WlExtensionLoader
+          onOpenAttendance={(attendance) => {
+            window.currentAttendance = attendance;
+            setCurrentAttendance(attendance);
+          }}
+        />
 
-      <Header />
-
-      <ExportSection
-        onExport={exportar}
-        loading={loading}
-        pdfBlob={pdfBlob}
-        nomeArquivo={nomeArquivo}
-        allchat={allChats}
-        setAllChats={null}
-      />
+        <ExportSection
+          onExport={exportar}
+          loading={loading}
+          pdfBlob={pdfBlob}
+          nomeArquivo={nomeArquivo}
+          allchat={allChats}
+          setAllChats={setAllChats}
+          pdfDownloaded={pdfDownloaded}
+          setPdfDownloaded={setPdfDownloaded}
+        />
+        <Protocols
+          protocols={status}
+          onDownload={(protocolId: string) => exportarProtocolo(protocolId)}
+        />
+      </div>
     </motion.div>
   );
 }

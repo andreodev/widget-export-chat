@@ -2,15 +2,17 @@ import api from "@/service/api";
 import type { PayloadDTO } from "@/types/payloadDTO";
 import { AxiosError } from "axios";
 
-export function useFetchText() {
-  const fetchData = async (payload: PayloadDTO) => {
+export function UseFetchStatus() {
+  const fetchDataStatus = async (payload: PayloadDTO) => {
     try {
       const response = await api.post(
-        "https://dev.gruponfa.com/webhook/extension/chats_export/export",
+        "https://dev.gruponfa.com/webhook/extension/chats_export/protocol",
         payload,
-        { responseType: "text" }
+        { responseType: "text" } 
       );
-      return response.data;
+
+      const parsedData = JSON.parse(response.data);
+      return parsedData;
     } catch (error: unknown) {
       if (error instanceof AxiosError) {
         if (error.response?.data?.message) {
@@ -22,5 +24,5 @@ export function useFetchText() {
       throw new Error("Erro inesperado tente novamente mais tarde.");
     }
   };
-  return { fetchData };
+  return { fetchDataStatus };
 }

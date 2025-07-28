@@ -11,7 +11,7 @@ import { base64ToBlob } from "@/util/base64ToBlob";
 import Protocols from "@/components/Status";
 import { UseFetchStatus } from "@/components/Status/hooks/useStatus";
 import type { Protocol } from "@/types/ProtocolDTO";
-
+import { EmptyState } from "@/components/EmptyState";
 
 export default function ExportarPage() {
   const [allChats, setAllChats] = useState(false);
@@ -23,10 +23,28 @@ export default function ExportarPage() {
   const [status, setStatus] = useState<Protocol[]>([]);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
 
-  //custom hooks
   const { fetchData } = useExportAll();
   const { fetchDataStatus } = UseFetchStatus();
   const { exportProtocol } = useExportProtocol();
+
+  // ✅ Reage a mudanças externas no atendimento
+  useEffect(() => {
+    const handleAttendanceChange = (e: CustomEvent) => {
+      const atendimento = e.detail || null;
+      setCurrentAttendance(atendimento);
+      if (!atendimento) {
+        setStatus([]);
+        setPdfBlob(null);
+        setNomeArquivo("exportacao.pdf");
+      }
+    };
+
+    window.addEventListener("attendanceChanged", handleAttendanceChange as EventListener);
+
+    return () => {
+      window.removeEventListener("attendanceChanged", handleAttendanceChange as EventListener);
+    };
+  }, [setCurrentAttendance]);
 
   useEffect(() => {
     const prevId = previousAttendanceIdRef.current;
@@ -178,7 +196,6 @@ export default function ExportarPage() {
         const blob = base64ToBlob(base64pdf);
         setPdfBlob(blob);
 
-        // Função para download automático
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -209,6 +226,10 @@ export default function ExportarPage() {
     }
   };
 
+  if (!currentAttendance) {
+    return <EmptyState />;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -220,7 +241,9 @@ export default function ExportarPage() {
         <WlExtensionLoader
           onOpenAttendance={(attendance) => {
             window.currentAttendance = attendance;
-            setCurrentAttendance(attendance);
+            window.dispatchEvent(
+              new CustomEvent("attendanceChanged", { detail: attendance })
+            );
           }}
         />
 

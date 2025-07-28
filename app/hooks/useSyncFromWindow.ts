@@ -2,28 +2,23 @@ import { useEffect, useState } from "react";
 import type { AttendanceDTO } from "@/types/attendanceDTO";
 
 export function useCurrentAttendance() {
-  const [currentAttendance, setCurrentAttendance] =
-    useState<AttendanceDTO | null>(null);
+  const [currentAttendance, setCurrentAttendance] = useState<AttendanceDTO | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (
-        window.currentAttendance &&
-        JSON.stringify(window.currentAttendance) !==
-          JSON.stringify(currentAttendance)
-      ) {
-        setCurrentAttendance(window.currentAttendance);
-      }
-    }, 1000);
+    function handleAttendanceChanged(event: CustomEvent) {
+      setCurrentAttendance(event.detail);
+    }
 
-    return () => clearInterval(interval);
-  }, [currentAttendance]);
+    window.addEventListener("attendanceChanged", handleAttendanceChanged as EventListener);
 
-  useEffect(() => {
-    if (window.currentAttendance && !currentAttendance) {
+    // Inicializa com o valor atual global (se houver)
+    if (window.currentAttendance) {
       setCurrentAttendance(window.currentAttendance);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      window.removeEventListener("attendanceChanged", handleAttendanceChanged as EventListener);
+    };
   }, []);
 
   return [currentAttendance, setCurrentAttendance] as const;

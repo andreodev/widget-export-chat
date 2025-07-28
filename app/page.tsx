@@ -12,6 +12,7 @@ import Protocols from "@/components/Status";
 import { UseFetchStatus } from "@/components/Status/hooks/useStatus";
 import type { Protocol } from "@/types/ProtocolDTO";
 import { EmptyState } from "@/components/EmptyState";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 
 export default function ExportarPage() {
   const [allChats, setAllChats] = useState(false);
@@ -32,6 +33,7 @@ export default function ExportarPage() {
     const handleAttendanceChange = (e: CustomEvent) => {
       const atendimento = e.detail || null;
       setCurrentAttendance(atendimento);
+      setLoading(false)
       if (!atendimento) {
         setStatus([]);
         setPdfBlob(null);
@@ -47,49 +49,52 @@ export default function ExportarPage() {
   }, [setCurrentAttendance]);
 
   useEffect(() => {
-    const prevId = previousAttendanceIdRef.current;
-    const currentId = currentAttendance?.atendimentoId || null;
+  const prevId = previousAttendanceIdRef.current;
+  const currentId = currentAttendance?.atendimentoId || null;
 
-    if (prevId !== currentId) {
-      setPdfBlob(null);
-      setNomeArquivo("exportacao.pdf");
-      setLoading(false);
-    }
+  if (prevId !== currentId && currentId) {
+    setLoading(true); // <- Loading inicia aqui
+    setPdfBlob(null);
+    setNomeArquivo("exportacao.pdf");
+    setStatus([]);
+    setPdfDownloaded(false);
+  }
 
-    previousAttendanceIdRef.current = currentId;
-  }, [currentAttendance]);
+  previousAttendanceIdRef.current = currentId;
+}, [currentAttendance]);
 
-  useEffect(() => {
-    const getStatus = async () => {
-      if (!currentAttendance) return;
+useEffect(() => {
+  const getStatus = async () => {
+    if (!currentAttendance) return;
 
-      const payload: PayloadDTO = {
-        atendimentoId: currentAttendance.atendimentoId,
-        canalId: currentAttendance.canalId,
-        sistemaId: currentAttendance.sistemaId,
-        contatoId: currentAttendance.contato?.id || null,
-        allchats: allChats,
-      };
-
-      try {
-        const result = await fetchDataStatus(payload);
-        const mappedProtocols = Array.isArray(result)
-          ? result.map((item) => ({
-              id: item.protocol || item.id,
-              startDate: item.startDate || new Date().toISOString(),
-              endDate: item.endDate || null,
-              status: item.status || "desconhecido",
-            }))
-          : [];
-        setStatus(mappedProtocols);
-      } catch (error) {
-        console.error("Erro ao buscar status:", error);
-      }
+    const payload: PayloadDTO = {
+      atendimentoId: currentAttendance.atendimentoId,
+      canalId: currentAttendance.canalId,
+      sistemaId: currentAttendance.sistemaId,
+      contatoId: currentAttendance.contato?.id || null,
+      allchats: allChats,
     };
 
-    getStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAttendance, allChats]);
+    try {
+      const result = await fetchDataStatus(payload);
+      const mappedProtocols = Array.isArray(result)
+        ? result.map((item) => ({
+            id: item.protocol || item.id,
+            startDate: item.startDate || new Date().toISOString(),
+            endDate: item.endDate || null,
+            status: item.status || "desconhecido",
+          }))
+        : [];
+      setStatus(mappedProtocols);
+    } catch (error) {
+      console.error("Erro ao buscar status:", error);
+    } finally {
+      setLoading(false); // <- loading termina aqui
+    }
+  };
+
+  getStatus();
+}, [currentAttendance, allChats]);
 
   const exportar = async () => {
     if (!currentAttendance) {

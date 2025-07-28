@@ -32,7 +32,6 @@ export function ExportSection({
   allchat,
   setAllChats,
   pdfDownloaded,
-  setPdfDownloaded,
 }: ExportSectionProps) {
   return (
     <>

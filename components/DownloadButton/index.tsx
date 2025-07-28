@@ -25,8 +25,7 @@ export function DownloadPdfButton({
     <motion.button
       onClick={handleDownload}
       whileTap={{ scale: 0.97 }}
-      className="w-full cursor-pointer bg-green-600 text-white font-medium py-2 px-4 rounded-lg text-base flex items-center justify-center gap-2 hover:bg-green-700 transition"
-       style={{ backgroundColor: '#192D3E', color: 'white', borderColor: '#192D3E' }}
+      className="w-full cursor-pointer bg-[#192D3E]  text-white font-medium py-2 px-4 rounded-sm hover:bg-[#192d3e94] text-base flex items-center justify-center gap-2  transition"
     >
       <FaDownload />
       Baixar PDF

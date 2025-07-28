@@ -25,22 +25,7 @@ export default function WlExtensionLoader({ onOpenAttendance }: IWlPropsDTO) {
           onOpenAttendance?.(attendance)
           window.dispatchEvent(new CustomEvent('attendanceChanged', { detail: attendance }))
         },
-        onFocusAttendance: (attendance: AttendanceDTO) => {
-          window.currentAttendance = attendance
-          onOpenAttendance?.(attendance)
-          window.dispatchEvent(new CustomEvent('attendanceChanged', { detail: attendance }))
-        },
         onCloseAttendance: () => {
-          window.currentAttendance = null
-          onOpenAttendance?.(null)
-          window.dispatchEvent(new CustomEvent('attendanceChanged', { detail: null }))
-        },
-        onOpenHistoricAttendance: (attendance: AttendanceDTO) => {
-          window.currentAttendance = attendance
-          onOpenAttendance?.(attendance)
-          window.dispatchEvent(new CustomEvent('attendanceChanged', { detail: attendance }))
-        },
-        onCloseHistoricAttendance: () => {
           window.currentAttendance = null
           onOpenAttendance?.(null)
           window.dispatchEvent(new CustomEvent('attendanceChanged', { detail: null }))

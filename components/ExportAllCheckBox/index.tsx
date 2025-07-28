@@ -13,7 +13,7 @@ export default function ExportAllCheckbox({
         type="checkbox"
         checked={allChats}
         onChange={(e) => setAllChats(e.target.checked)}
-        className="h-4 w-4 text-blue-600 cursor-pointer border-gray-300 rounded focus:ring-blue-500"
+        className="h-4 w-4 text-[#192D3E] cursor-pointer border-gray-300 rounded focus:ring-[#192D3E]"
       />
       <label htmlFor="check-all" className="text-sm text-gray-700">
         Exportar histórico completo deste contato

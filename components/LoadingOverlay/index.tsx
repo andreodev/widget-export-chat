@@ -9,7 +9,7 @@ export function LoadingOverlay() {
       "
       style={{ WebkitBackdropFilter: "blur(6px)" }}
     >
-      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-16 h-16 border-4 border-[#192D3E] border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 }

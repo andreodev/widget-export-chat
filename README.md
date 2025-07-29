@@ -58,7 +58,6 @@ npm run dev
 
 - Formato: `.pdf`
 - Estilo baseado na interface do sistema
-- Compactação leve com `html2pdf`
 - Suporte a múltiplas páginas
 
 ---

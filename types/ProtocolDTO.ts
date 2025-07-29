@@ -3,4 +3,5 @@ export type Protocol = {
   startDate: string;
   endDate: string | null;
   status: "finalizado" | "em_andamento" | string;
+  attendanceId: string
 };

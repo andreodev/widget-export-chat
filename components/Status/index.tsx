@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, Download } from "lucide-react";
-import { useState } from "react";
+import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import type { Protocol } from "@/types/ProtocolDTO";
 import { LoadingOverlay } from "../LoadingOverlay";
 import { AnimatePresence, motion } from "framer-motion";
@@ -36,6 +36,11 @@ export default function Protocols({ protocols, onDownload }: Props) {
   const itemsPerPage = 10;
   const totalPages = Math.ceil(protocols.length / itemsPerPage);
 
+  useEffect(() => {
+    setCurrentPage(1);
+    setDirection(0);
+  }, [protocols]);
+
   const paginatedProtocols = protocols.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -47,7 +52,6 @@ export default function Protocols({ protocols, onDownload }: Props) {
     setLoadingId(null);
   };
 
-  // Variants para animação condicional com base na direção
   const variants = {
     enter: (dir: number) => ({
       opacity: 0,
@@ -66,11 +70,7 @@ export default function Protocols({ protocols, onDownload }: Props) {
   return (
     <Card className="text-[11px] relative">
       {loadingId && <LoadingOverlay />}
-      {/* seu CardHeader e CardContent aqui */}
-
       <CardContent>
-        {/* indicadores, tabela, etc... */}
-
         <div className="rounded-md border">
           <div className="w-full overflow-auto">
             <Table>
@@ -122,37 +122,39 @@ export default function Protocols({ protocols, onDownload }: Props) {
             </Table>
           </div>
 
-          <div className="flex justify-end items-center gap-2 p-2 text-[10px]">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => {
-                if (currentPage > 1) {
-                  setDirection(-1);
-                  setCurrentPage((p) => p - 1);
-                }
-              }}
-            >
-              Anterior
-            </Button>
-            <span>
-              Página {currentPage} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => {
-                if (currentPage < totalPages) {
-                  setDirection(1);
-                  setCurrentPage((p) => p + 1);
-                }
-              }}
-            >
-              Próxima
-            </Button>
-          </div>
+         <div className="flex justify-center items-center gap-4 p-2 text-[10px]">
+  <Button
+    variant="outline"
+    size="sm"
+    disabled={currentPage === 1}
+    onClick={() => {
+      if (currentPage > 1) {
+        setDirection(-1);
+        setCurrentPage((p) => p - 1);
+      }
+    }}
+    aria-label="Página anterior"
+  >
+    <ChevronLeft className="w-4 h-4" />
+  </Button>
+  <span>
+    Página {currentPage} de {totalPages}
+  </span>
+  <Button
+    variant="outline"
+    size="sm"
+    disabled={currentPage === totalPages || totalPages === 0}
+    onClick={() => {
+      if (currentPage < totalPages) {
+        setDirection(1);
+        setCurrentPage((p) => p + 1);
+      }
+    }}
+    aria-label="Próxima página"
+  >
+    <ChevronRight className="w-4 h-4" />
+  </Button>
+</div>
         </div>
       </CardContent>
     </Card>

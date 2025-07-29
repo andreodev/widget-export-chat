@@ -18,10 +18,8 @@ Projeto realizado como **freelancer para a Inov Start**.
 
 - [React](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
-- [html2pdf.js](https://github.com/eKoopmans/html2pdf.js) (para exportação)
 - [TailwindCSS](https://tailwindcss.com/)
 - [Framer Motion](https://www.framer.com/motion/) (animações)
-- [Icons8](https://icons8.com.br/) (ícones)
 
 ---
 
@@ -43,19 +41,7 @@ npm run dev
 
 ---
 
-## 🧪 Uso
 
-Você pode integrar o componente principal ao seu sistema assim:
-
-```tsx
-import WidgetExportChat from './components/WidgetExportChat';
-
-export default function Page() {
-  return <WidgetExportChat contactId="abc123" />;
-}
-```
-
----
 
 ## ⚙️ Parâmetros do Componente
 
